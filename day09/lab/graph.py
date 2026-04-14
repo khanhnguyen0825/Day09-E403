@@ -107,8 +107,8 @@ def supervisor_node(state: AgentState) -> AgentState:
     risk_high = False
 
     # Ví dụ routing cơ bản — nhóm phát triển thêm:
-    policy_keywords = ["hoàn tiền", "refund", "flash sale", "license", "cấp quyền", "access", "level 3"]
-    risk_keywords = ["emergency", "khẩn cấp", "2am", "không rõ", "err-"]
+    policy_keywords = ["hoàn tiền", "refund", "flash sale", "license", "cấp quyền", "access", "level 3", "p1"]
+    risk_keywords = ["emergency", "khẩn cấp", "2am", "không rõ", "err-", "p1"]
 
     found_policy = [kw for kw in policy_keywords if kw in task]
     found_risk = [kw for kw in risk_keywords if kw in task]
