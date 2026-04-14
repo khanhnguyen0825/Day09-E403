@@ -17,130 +17,79 @@ Gọi độc lập để test:
 """
 
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 WORKER_NAME = "synthesis_worker"
 
-SYSTEM_PROMPT = """Bạn là trợ lý IT Helpdesk nội bộ.
+SYSTEM_PROMPT = """Bạn là chuyên gia hỗ trợ nội bộ (AI Helpdesk) chuyên nghiệp cho khối CS & IT.
+Nhiệm vụ của bạn là giải đáp thắc mắc của nhân viên dựa TRỰC TIẾP và CHỈ trên nền tảng dữ liệu (context) được cung cấp.
 
-Quy tắc nghiêm ngặt:
-1. CHỈ trả lời dựa vào context được cung cấp. KHÔNG dùng kiến thức ngoài.
-2. Nếu context không đủ để trả lời → nói rõ "Không đủ thông tin trong tài liệu nội bộ".
-3. Trích dẫn nguồn cuối mỗi câu quan trọng: [tên_file].
-4. Trả lời súc tích, có cấu trúc. Không dài dòng.
-5. Nếu có exceptions/ngoại lệ → nêu rõ ràng trước khi kết luận.
+CÁC QUY TẮC BẮT BUỘC (CRITICAL RULES):
+1. TRÍCH DẪN RÕ RÀNG: Luôn gắn [tên_file] ngay sau đoạn thông tin hoặc từng ý.
+2. ĐỊNH DẠNG CHUYÊN NGHIỆP: Ưu tiên trả lời bằng bullet points hoặc các đoạn ngắn gọn để dễ đọc.
+3. KHÔNG BỊA ĐẶT (ANTI-HALLUCINATION): Nếu câu hỏi vượt ngoài dữ liệu context, từ chối trả lời một cách lịch sự: "Tôi xin lỗi, thông tin hiện tại trong cơ sở dữ liệu không đủ để trả lời câu hỏi này." 
+4. THÔNG TIN NHẠY CẢM: Nếu hỏi về thông tin nhạy cảm bảo mật (password, root access), tuyệt đối từ chối và hướng dẫn tạo ticket trên IT-ACCESS.
+5. XỬ LÝ CHÍNH SÁCH (POLICY): Nếu có các ngoại lệ (Exception) từ bộ phận chính sách cung cấp, hãy nêu rõ ràng các ngoại lệ đó trước khi kết luận.
 """
 
 
 def _call_llm(messages: list) -> str:
-    """
-    Gọi LLM để tổng hợp câu trả lời.
-    TODO Sprint 2: Implement với OpenAI hoặc Gemini.
-    """
-    # Option A: OpenAI
-    try:
-        from openai import OpenAI
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=messages,
-            temperature=0.1,  # Low temperature để grounded
-            max_tokens=500,
+    from openai import OpenAI
+
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+    # Clean surrogate characters for OpenAI
+    for m in messages:
+        m["content"] = (
+            m["content"].encode("utf-16", "surrogatepass").decode("utf-16", "ignore")
         )
-        return response.choices[0].message.content
-    except Exception:
-        pass
 
-    # Option B: Gemini
-    try:
-        import google.generativeai as genai
-        genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        combined = "\n".join([m["content"] for m in messages])
-        response = model.generate_content(combined)
-        return response.text
-    except Exception:
-        pass
-
-    # Fallback: trả về message báo lỗi (không hallucinate)
-    return "[SYNTHESIS ERROR] Không thể gọi LLM. Kiểm tra API key trong .env."
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+        temperature=0,
+        max_tokens=600,
+    )
+    return response.choices[0].message.content
 
 
 def _build_context(chunks: list, policy_result: dict) -> str:
-    """Xây dựng context string từ chunks và policy result."""
     parts = []
-
     if chunks:
-        parts.append("=== TÀI LIỆU THAM KHẢO ===")
+        parts.append("--- Hợp đồng & Tài liệu nội bộ ---")
         for i, chunk in enumerate(chunks, 1):
-            source = chunk.get("source", "unknown")
+            source = chunk.get("metadata", {}).get("source", "unknown")
             text = chunk.get("text", "")
-            score = chunk.get("score", 0)
-            parts.append(f"[{i}] Nguồn: {source} (relevance: {score:.2f})\n{text}")
+            parts.append(f"NGUỒN: {source}\nNỘI DUNG: {text}")
 
     if policy_result and policy_result.get("exceptions_found"):
-        parts.append("\n=== POLICY EXCEPTIONS ===")
+        parts.append("\n--- Cảnh báo từ bộ phận Chính sách (Policy) ---")
         for ex in policy_result["exceptions_found"]:
-            parts.append(f"- {ex.get('rule', '')}")
+            parts.append(f"NGOẠI LỆ: {ex.get('rule', '')}")
 
-    if not parts:
-        return "(Không có context)"
-
-    return "\n\n".join(parts)
-
-
-def _estimate_confidence(chunks: list, answer: str, policy_result: dict) -> float:
-    """
-    Ước tính confidence dựa vào:
-    - Số lượng và quality của chunks
-    - Có exceptions không
-    - Answer có abstain không
-
-    TODO Sprint 2: Có thể dùng LLM-as-Judge để tính confidence chính xác hơn.
-    """
-    if not chunks:
-        return 0.1  # Không có evidence → low confidence
-
-    if "Không đủ thông tin" in answer or "không có trong tài liệu" in answer.lower():
-        return 0.3  # Abstain → moderate-low
-
-    # Weighted average của chunk scores
-    if chunks:
-        avg_score = sum(c.get("score", 0) for c in chunks) / len(chunks)
-    else:
-        avg_score = 0
-
-    # Penalty nếu có exceptions (phức tạp hơn)
-    exception_penalty = 0.05 * len(policy_result.get("exceptions_found", []))
-
-    confidence = min(0.95, avg_score - exception_penalty)
-    return round(max(0.1, confidence), 2)
+    return "\n\n".join(parts) if parts else "Không tìm thấy dữ liệu liên quan."
 
 
 def synthesize(task: str, chunks: list, policy_result: dict) -> dict:
-    """
-    Tổng hợp câu trả lời từ chunks và policy context.
-
-    Returns:
-        {"answer": str, "sources": list, "confidence": float}
-    """
     context = _build_context(chunks, policy_result)
 
-    # Build messages
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {
             "role": "user",
-            "content": f"""Câu hỏi: {task}
-
-{context}
-
-Hãy trả lời câu hỏi dựa vào tài liệu trên."""
-        }
+            "content": f"Câu hỏi nhân viên: {task}\n\nDữ liệu tham khảo:\n{context}\n\nCâu trả lời của AI Helpdesk:",
+        },
     ]
 
     answer = _call_llm(messages)
-    sources = list({c.get("source", "unknown") for c in chunks})
-    confidence = _estimate_confidence(chunks, answer, policy_result)
+    sources = list({c.get("metadata", {}).get("source", "unknown") for c in chunks})
+
+    # Tính confidence đơn giản
+    confidence = 0.9 if chunks else 0.1
+    if "xin lỗi" in answer.lower():
+        confidence = 0.3
 
     return {
         "answer": answer,
@@ -236,7 +185,12 @@ if __name__ == "__main__":
         ],
         "policy_result": {
             "policy_applies": False,
-            "exceptions_found": [{"type": "flash_sale_exception", "rule": "Flash Sale không được hoàn tiền."}],
+            "exceptions_found": [
+                {
+                    "type": "flash_sale_exception",
+                    "rule": "Flash Sale không được hoàn tiền.",
+                }
+            ],
         },
     }
     result2 = run(test_state2.copy())
