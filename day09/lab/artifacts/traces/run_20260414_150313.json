@@ -1,0 +1,109 @@
+{
+  "task": "ERR-403-AUTH là lỗi gì và cách xử lý?",
+  "route_reason": "unknown error code + risk_high → human review | human approved → retrieval",
+  "risk_high": true,
+  "needs_tool": false,
+  "hitl_triggered": true,
+  "retrieved_chunks": [
+    {
+      "text": "P1 — CRITICAL (Khẩn cấp):\nĐịnh nghĩa: Sự cố ảnh hưởng toàn bộ hệ thống production, không có workaround.\nVí dụ: Database sập, API gateway down, toàn bộ người dùng không thể đăng nhập.\n\nP2 — HIGH (Nghiêm trọng):\nĐịnh nghĩa: Sự cố ảnh hưởng một phần hệ thống, có workaround tạm thời.\nVí dụ: Một số tính năng không hoạt động, ảnh hưởng một nhóm người dùng.\n\nP3 — MEDIUM (Trung bình):\nĐịnh nghĩa: Lỗi ảnh hưởng không đáng kể, người dùng vẫn làm việc được.\n\nP4 — LOW (Thấp):\nĐịnh nghĩa: Yêu cầu cải tiến, gợi ý, hoặc lỗi giao diện nhỏ.",
+      "metadata": {
+        "effective_date": "2026-01-15",
+        "section": "Phần 1: Định nghĩa mức độ ưu tiên",
+        "source": "support/sla-p1-2026.pdf",
+        "department": "IT",
+        "access": "internal"
+      },
+      "score": 0.0159
+    },
+    {
+      "text": "Bước 1: Nhân viên tạo Access Request ticket trên Jira (project IT-ACCESS).\nBước 2: Line Manager phê duyệt yêu cầu trong 1 ngày làm việc.\nBước 3: IT Admin kiểm tra compliance và cấp quyền.\nBước 4: IT Security review với Level 3 và Level 4.\nBước 5: Nhân viên nhận thông báo qua email khi quyền được cấp.",
+      "metadata": {
+        "access": "internal",
+        "section": "Section 3: Quy trình yêu cầu cấp quyền",
+        "source": "it/access-control-sop.md",
+        "department": "IT Security",
+        "effective_date": "2026-01-01"
+      },
+      "score": 0.01
+    },
+    {
+      "text": "Q: Tôi quên mật khẩu, phải làm gì?\nA: Truy cập https://sso.company.internal/reset hoặc liên hệ Helpdesk qua ext. 9000. Mật khẩu mới sẽ được gửi qua email công ty trong vòng 5 phút.\n\nQ: Tài khoản bị khóa sau bao nhiêu lần đăng nhập sai?\nA: Tài khoản bị khóa sau 5 lần đăng nhập sai liên tiếp. Để mở khóa, liên hệ IT Helpdesk hoặc tự reset qua portal SSO.\n\nQ: Mật khẩu cần thay đổi định kỳ không?\nA: Có. Mật khẩu phải được thay đổi mỗi 90 ngày. Hệ thống sẽ nhắc nhở 7 ngày trước khi hết hạn.",
+      "metadata": {
+        "section": "Section 1: Tài khoản và mật khẩu",
+        "source": "support/helpdesk-faq.md",
+        "access": "internal",
+        "effective_date": "2026-01-20",
+        "department": "IT"
+      },
+      "score": 0.0098
+    }
+  ],
+  "retrieved_sources": [
+    "it/access-control-sop.md",
+    "support/helpdesk-faq.md",
+    "support/sla-p1-2026.pdf"
+  ],
+  "policy_result": {},
+  "mcp_tools_used": [],
+  "final_answer": "- Lỗi ERR-403-AUTH thường liên quan đến việc từ chối quyền truy cập do xác thực không thành công hoặc không đủ quyền hạn để truy cập tài nguyên.\n- Để xử lý lỗi này, bạn có thể thực hiện các bước sau:\n  - Kiểm tra lại thông tin đăng nhập (username và password) để đảm bảo chúng chính xác.\n  - Nếu bạn quên mật khẩu, hãy truy cập [https://sso.company.internal/reset](https://sso.company.internal/reset) hoặc liên hệ Helpdesk qua ext. 9000 để được hỗ trợ.\n  - Nếu tài khoản của bạn bị khóa do nhập sai mật khẩu quá số lần cho phép, bạn có thể tự reset qua portal SSO hoặc liên hệ IT Helpdesk để mở khóa.\n- Nếu vấn đề vẫn tiếp diễn, hãy tạo một ticket trên Jira (project IT-ACCESS) để yêu cầu hỗ trợ từ IT Admin. [support/helpdesk-faq.md]",
+  "sources": [
+    "it/access-control-sop.md",
+    "support/helpdesk-faq.md",
+    "support/sla-p1-2026.pdf"
+  ],
+  "confidence": 0.9,
+  "history": [
+    "[supervisor] received task: ERR-403-AUTH là lỗi gì và cách xử lý?",
+    "[supervisor] route=human_review reason=unknown error code + risk_high → human review",
+    "[human_review] HITL triggered — awaiting human input",
+    "[retrieval_worker] retrieved 3 chunks using Hybrid Search",
+    "[synthesis_worker] answer generated, confidence=0.9, sources=['it/access-control-sop.md', 'support/helpdesk-faq.md', 'support/sla-p1-2026.pdf']",
+    "[graph] completed in 4852ms"
+  ],
+  "workers_called": [
+    "human_review",
+    "retrieval_worker",
+    "synthesis_worker"
+  ],
+  "supervisor_route": "retrieval_worker",
+  "latency_ms": 4852,
+  "run_id": "run_20260414_150313",
+  "worker_io_logs": [
+    {
+      "worker": "retrieval_worker",
+      "input": {
+        "task": "ERR-403-AUTH là lỗi gì và cách xử lý?",
+        "top_k": 3
+      },
+      "output": {
+        "chunks_count": 3,
+        "sources": [
+          "it/access-control-sop.md",
+          "support/helpdesk-faq.md",
+          "support/sla-p1-2026.pdf"
+        ]
+      },
+      "error": null
+    },
+    {
+      "worker": "synthesis_worker",
+      "input": {
+        "task": "ERR-403-AUTH là lỗi gì và cách xử lý?",
+        "chunks_count": 3,
+        "has_policy": false
+      },
+      "output": {
+        "answer_length": 734,
+        "sources": [
+          "it/access-control-sop.md",
+          "support/helpdesk-faq.md",
+          "support/sla-p1-2026.pdf"
+        ],
+        "confidence": 0.9
+      },
+      "error": null
+    }
+  ],
+  "question_id": "q09"
+}

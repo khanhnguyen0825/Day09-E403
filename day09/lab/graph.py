@@ -110,14 +110,20 @@ def supervisor_node(state: AgentState) -> AgentState:
     policy_keywords = ["hoàn tiền", "refund", "flash sale", "license", "cấp quyền", "access", "level 3"]
     risk_keywords = ["emergency", "khẩn cấp", "2am", "không rõ", "err-"]
 
-    if any(kw in task for kw in policy_keywords):
+    found_policy = [kw for kw in policy_keywords if kw in task]
+    found_risk = [kw for kw in risk_keywords if kw in task]
+
+    if found_policy:
         route = "policy_tool_worker"
-        route_reason = f"task contains policy/access keyword"
+        route_reason = f"task contains policy keywords: {found_policy}"
         needs_tool = True
 
-    if any(kw in task for kw in risk_keywords):
+    if found_risk:
         risk_high = True
-        route_reason += " | risk_high flagged"
+        if not route_reason:
+            route_reason = f"risk detected: {found_risk}"
+        else:
+            route_reason += f" | risk detected: {found_risk}"
 
     # Human review override
     if risk_high and "err-" in task:

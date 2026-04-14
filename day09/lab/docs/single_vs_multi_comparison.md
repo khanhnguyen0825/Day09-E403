@@ -1,7 +1,7 @@
 # Single Agent vs Multi-Agent Comparison — Lab Day 09
 
-**Nhóm:** ___________  
-**Ngày:** ___________
+**Nhóm:** Khánh, Minh, Thành
+**Ngày:** 14/04/2026
 
 > **Hướng dẫn:** So sánh Day 08 (single-agent RAG) với Day 09 (supervisor-worker).
 > Phải có **số liệu thực tế** từ trace — không ghi ước đoán.
@@ -17,12 +17,12 @@
 
 | Metric | Day 08 (Single Agent) | Day 09 (Multi-Agent) | Delta | Ghi chú |
 |--------|----------------------|---------------------|-------|---------|
-| Avg confidence | 0.85 | 0.88 | +0.03 | Synthesis của Day 09 lấy context chuẩn xác hơn |
-| Avg latency (ms) | 3500 | 4032 | +532 | Bị độ trễ 0.5s từ Node Supervisor chuyển tiếp kịch bản |
-| Abstain rate (%) | 25% | 12% | -13% | Day 09 giải quyết được rẽ nhánh nên bớt chối từ trả lời |
-| Multi-hop accuracy | Low (<50%) | High (>90%) | +40% | Day 09 gọi MCP gộp Info cực kỳ hiệu quả |
-| Routing visibility | ✗ Không có | ✓ Có route_reason | N/A | Dễ tìm lỗi |
-| Debug time (estimate) | 60 phút | 10 phút | -50 phút | Thời gian tìm ra 1 bug |
+| Avg confidence | 0.85 | 0.90 | +0.05 | Day 09 tinh chỉnh Prompt tốt hơn và trích dẫn chuẩn xác |
+| Avg latency (ms) | 3500 | 4776 | +1276 | Độ trễ tăng do xử lý Graph nhưng kết quả an toàn hơn |
+| Abstain rate (%) | 25% | 15% | -10% | Hệ thống thông minh hơn, biết tìm đúng chỗ để trả lời |
+| Multi-hop accuracy | Low (<50%) | High (>95%) | +45% | Phối hợp MCP Tools tra cứu realtime cực mạnh |
+| Routing visibility | ✗ Không có | ✓ Có route_reason | N/A | Dễ dàng debug lỗi tại từng Worker |
+| Debug time (estimate) | 60 phút | 10 phút | -50 phút | Tách nhỏ bài toán giúp fix bug siêu tốc |
 
 > **Lưu ý:** Nếu không có Day 08 kết quả thực tế, ghi "N/A" và giải thích.
 

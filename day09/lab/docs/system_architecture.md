@@ -1,8 +1,7 @@
 # System Architecture — Lab Day 09
 
-**Nhóm:** Nhóm 01 (Khánh - Minh - Thành)  
+**Nhóm:** Khánh - Minh - Thành 
 **Ngày:** 14/04/2026  
-**Version:** 1.0
 
 ---
 
@@ -83,7 +82,7 @@ graph TD
 | Thuộc tính | Mô tả |
 |-----------|-------|
 | **Nhiệm vụ** | Gọi vào CSDL ChromaDB để truy xuất các đoạn văn bản liên quan tới truy vấn sử dụng thuật toán Hybrid. |
-| **Embedding model** | all-MiniLM-L6-v2 kết hợp với thuật toán nội suy BM25. |
+| **Embedding model** | OpenAI text-embedding-3-small (đảm bảo độ chính xác cao hơn model local). |
 | **Top-k** | Lấy 3 chunks. |
 | **Stateless?** | Yes |
 
