@@ -1,0 +1,29 @@
+{
+  "generated_at": "2026-04-14T10:47:58.702881",
+  "day08_single_agent": {
+    "total_questions": 12,
+    "avg_confidence": 0.85,
+    "avg_latency_ms": 3500,
+    "abstain_rate": "25% (3/12)",
+    "multi_hop_accuracy": "Low"
+  },
+  "day09_multi_agent": {
+    "total_traces": 15,
+    "routing_distribution": {
+      "retrieval_worker": "8/15 (53%)",
+      "policy_tool_worker": "7/15 (46%)"
+    },
+    "avg_confidence": 0.273,
+    "avg_latency_ms": 4032,
+    "mcp_usage_rate": "7/15 (46%)",
+    "hitl_rate": "1/15 (6%)",
+    "top_sources": []
+  },
+  "analysis": {
+    "routing_visibility": "Day 09 có route_reason cho từng câu → dễ debug hơn Day 08 rất nhiều.",
+    "latency_delta": "Day 09 có trễ cao hơn một chút (do tốn thời gian route) nhưng chính xác hơn ở các luồng rẽ nhánh.",
+    "accuracy_delta": "Multi-Agent xử lý tốt ngoại lệ (Flash Sale, ERR-403) nhờ Policy Worker chuyên trách.",
+    "debuggability": "Multi-agent: có thể test từng worker độc lập. Single-agent: không thể, lỗi là fail toàn luồng.",
+    "mcp_benefit": "Day 09 dùng MCP tra cứu JIRA không cần nhúng thẳng code API, mở rộng cực tốt."
+  }
+}
