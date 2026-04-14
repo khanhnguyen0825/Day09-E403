@@ -127,6 +127,8 @@ def retrieve_hybrid(query: str, top_k: int = DEFAULT_TOP_K) -> List[Dict[str, An
         results.append(chunk)
     return results
 
+# Hàm retrieve_hybrid gốc đã ở trên (dòng 99-128) - Rất chuẩn!
+
 def run(state: dict) -> dict:
     task = state.get("task", "")
     top_k = state.get("retrieval_top_k", DEFAULT_TOP_K)

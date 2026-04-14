@@ -218,7 +218,7 @@ def build_graph():
     TODO Sprint 1: Có thể chuyển sang LangGraph nếu muốn.
     """
     # Option A: Simple Python orchestrator
-    def run(state: AgentState) -> AgentState:
+    def run_internal(state: AgentState) -> AgentState:
         import time
         start = time.time()
 
@@ -235,7 +235,7 @@ def build_graph():
         elif route == "policy_tool_worker":
             state = policy_tool_worker_node(state)
             # Policy worker may need retrieval context first
-            if not state["retrieved_chunks"]:
+            if not state.get("retrieved_chunks"):
                 state = retrieval_worker_node(state)
         else:
             # Default: retrieval_worker
@@ -248,7 +248,7 @@ def build_graph():
         state["history"].append(f"[graph] completed in {state['latency_ms']}ms")
         return state
 
-    return run
+    return run_internal
 
 
 # ─────────────────────────────────────────────
