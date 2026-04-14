@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-14T15:03:53.043088",
+  "generated_at": "2026-04-14T16:32:58.600978",
   "day08_single_agent": {
     "total_questions": 12,
     "avg_confidence": 0.85,
@@ -8,15 +8,15 @@
     "multi_hop_accuracy": "Low"
   },
   "day09_multi_agent": {
-    "total_traces": 15,
+    "total_traces": 17,
     "routing_distribution": {
-      "retrieval_worker": "8/15 (53%)",
-      "policy_tool_worker": "7/15 (46%)"
+      "retrieval_worker": "9/17 (52%)",
+      "policy_tool_worker": "8/17 (47%)"
     },
     "avg_confidence": 0.9,
-    "avg_latency_ms": 4776,
-    "mcp_usage_rate": "7/15 (46%)",
-    "hitl_rate": "1/15 (6%)",
+    "avg_latency_ms": 4522,
+    "mcp_usage_rate": "8/17 (47%)",
+    "hitl_rate": "1/17 (5%)",
     "top_sources": [
       [
         "support/sla-p1-2026.pdf",
