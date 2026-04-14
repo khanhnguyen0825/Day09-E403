@@ -1,145 +1,52 @@
-# Báo Cáo Nhóm — Lab Day 08: Full RAG Pipeline
+# Báo Cáo Tổng Kết Nhóm — Lab Day 08: RAG Pipeline
 
-**Tên nhóm:** ___________  
-**Thành viên:**
-| Tên | Vai trò | Email |
-|-----|---------|-------|
-| ___ | Tech Lead | ___ |
-| ___ | Retrieval Owner | ___ |
-| ___ | Eval Owner | ___ |
-| ___ | Documentation Owner | ___ |
-
-**Ngày nộp:** ___________  
-**Repo:** ___________  
-**Độ dài khuyến nghị:** 600–900 từ
+**Nhóm:** Khánh - Minh - Thành
+**Thành viên:** 
+1. Nguyễn Thành Đại Khánh (MSSV: 2A202600404)
+2. Đỗ Trọng Minh (MSSV: 2A202600464)
+3. Nguyễn Tiến Thành (MSSV: 2A202600487)
 
 ---
 
-> **Hướng dẫn nộp group report:**
->
-> - File này nộp tại: `reports/group_report.md`
-> - Deadline: Được phép commit **sau 18:00** (xem SCORING.md)
-> - Tập trung vào **quyết định kỹ thuật cấp nhóm** — không trùng lặp với individual reports
-> - Phải có **bằng chứng từ code, scorecard, hoặc tuning log** — không mô tả chung chung
+## 1. Mục tiêu bài lab
+Nhóm thực hiện xây dựng một công cụ hỗ trợ trả lời câu hỏi nội bộ (Helpdesk) bằng cách dùng dữ liệu từ các file chính sách (SLA, SOP, Policy) có sẵn. Mục tiêu là để AI trả lời đúng, có trích dẫn nguồn và không tự bịa ra thông tin.
+
+## 2. Cách nhóm thực hiện
+
+Nhóm chia việc làm theo 4 phần chính:
+
+*   **Chuẩn bị dữ liệu:** Nhóm tách văn bản theo từng đoạn (chunking) để AI dễ đọc. Dữ liệu được chuyển thành vector bằng mô hình OpenAI và lưu vào database ChromaDB.
+*   **Tìm kiếm (Retrieval):** Để tìm được đúng các từ khóa khó (như mã lỗi ERR-403), nhóm kết hợp cả tìm kiếm theo nghĩa (Dense) và tìm kiếm theo từ khóa (BM25). Sau đó dùng thuật toán RRF để trộn kết quả lại với nhau.
+*   **Trả lời (Generation):** Dùng prompt hướng dẫn AI chỉ được trả lời dựa trên tài liệu đưa vào. Nếu không tìm thấy thì phải nói là không biết chứ không được đoán mò.
+*   **Chấm điểm:** Dùng một script để AI tự chấm điểm các câu trả lời của hệ thống xem có đúng và đủ ý hay không.
+
+## 3. Kết quả đánh giá
+
+Nhóm đã test thử với 12 câu hỏi và so sánh giữa cách làm cũ (chỉ dùng Dense) và cách làm mới (Hybrid).
+
+| Metric | Bản cũ (Dense) | Bản mới (Hybrid) | Nhận xét |
+| :--- | :--- | :--- | :--- |
+| **Độ trung thực** | 5.00/5 | 5.00/5 | AI không bịa thông tin |
+| **Đúng trọng tâm** | 5.00/5 | 5.00/5 | Trả lời đúng ý câu hỏi |
+| **Độ đầy đủ** | 4.83/5 | 4.75/5 | Bản mới giảm nhẹ do bị nhiễu từ khóa |
+
+**Nhận xét:** Hệ thống chạy ổn định, biết từ chối khi hỏi những câu không có trong dữ liệu (như câu hỏi về tiền ăn hay tham nhũng).
+
+## 4. Phân công công việc
+
+*   **Khánh:** Làm phần chuẩn bị dữ liệu, metadata và viết code cho phần tìm kiếm Hybrid ở Sprint 3.
+*   **Minh:** Viết Prompt hướng dẫn AI trả lời, sửa lỗi hiển thị và xử lý dữ liệu đầu vào.
+*   **Thành:** Soạn câu hỏi test, viết code chấm điểm tự động và làm các file tài liệu hướng dẫn.
+
+## 5. Kết luận
+Nhóm đã hoàn thành đủ các bước của bài thực hành. Hệ thống trả lời tốt cả tiếng Việt lẫn các thuật ngữ kỹ thuật. Đây là bài học hay về việc kết hợp nhiều phương pháp tìm kiếm để có kết quả tốt nhất.
+
+## 6. Kết quả Grading Questions
+Sau khi nhận 10 câu hỏi từ giảng viên lúc 17:00, nhóm đã chạy máy và lấy kết quả. 
+
+*   Cả 10 câu đều có câu trả lời, không bị lỗi khi chạy.
+*   Kết quả đã được lưu tại file `logs/grading_run.json`.
+*   Nhóm thấy AI trả lời khá tốt các câu hỏi khó về thời gian xử lý sự cố.
 
 ---
-
-## 1. Pipeline nhóm đã xây dựng (150–200 từ)
-
-> Mô tả ngắn gọn pipeline của nhóm:
-> - Chunking strategy: size, overlap, phương pháp tách (by paragraph, by section, v.v.)
-> - Embedding model đã dùng
-> - Retrieval mode: dense / hybrid / rerank (Sprint 3 variant)
-
-**Chunking decision:**
-> VD: "Nhóm dùng chunk_size=500, overlap=50, tách theo section headers vì tài liệu có cấu trúc rõ ràng."
-
-_________________
-
-**Embedding model:**
-
-_________________
-
-**Retrieval variant (Sprint 3):**
-> Nêu rõ variant đã chọn (hybrid / rerank / query transform) và lý do ngắn gọn.
-
-_________________
-
----
-
-## 2. Quyết định kỹ thuật quan trọng nhất (200–250 từ)
-
-> Chọn **1 quyết định thiết kế** mà nhóm thảo luận và đánh đổi nhiều nhất trong lab.
-> Phải có: (a) vấn đề gặp phải, (b) các phương án cân nhắc, (c) lý do chọn.
-
-**Quyết định:** ___________________
-
-**Bối cảnh vấn đề:**
-
-_________________
-
-**Các phương án đã cân nhắc:**
-
-| Phương án | Ưu điểm | Nhược điểm |
-|-----------|---------|-----------|
-| ___ | ___ | ___ |
-| ___ | ___ | ___ |
-
-**Phương án đã chọn và lý do:**
-
-_________________
-
-**Bằng chứng từ scorecard/tuning-log:**
-
-_________________
-
----
-
-## 3. Kết quả grading questions (100–150 từ)
-
-> Sau khi chạy pipeline với grading_questions.json (public lúc 17:00):
-> - Câu nào pipeline xử lý tốt nhất? Tại sao?
-> - Câu nào pipeline fail? Root cause ở đâu (indexing / retrieval / generation)?
-> - Câu gq07 (abstain) — pipeline xử lý thế nào?
-
-**Ước tính điểm raw:** ___ / 98
-
-**Câu tốt nhất:** ID: ___ — Lý do: ___________________
-
-**Câu fail:** ID: ___ — Root cause: ___________________
-
-**Câu gq07 (abstain):** ___________________
-
----
-
-## 4. A/B Comparison — Baseline vs Variant (150–200 từ)
-
-> Dựa vào `docs/tuning-log.md`. Tóm tắt kết quả A/B thực tế của nhóm.
-
-**Biến đã thay đổi (chỉ 1 biến):** ___________________
-
-| Metric | Baseline | Variant | Delta |
-|--------|---------|---------|-------|
-| ___ | ___ | ___ | ___ |
-| ___ | ___ | ___ | ___ |
-
-**Kết luận:**
-> Variant tốt hơn hay kém hơn? Ở điểm nào?
-
-_________________
-
----
-
-## 5. Phân công và đánh giá nhóm (100–150 từ)
-
-> Đánh giá trung thực về quá trình làm việc nhóm.
-
-**Phân công thực tế:**
-
-| Thành viên | Phần đã làm | Sprint |
-|------------|-------------|--------|
-| ___ | ___________________ | ___ |
-| ___ | ___________________ | ___ |
-| ___ | ___________________ | ___ |
-| ___ | ___________________ | ___ |
-
-**Điều nhóm làm tốt:**
-
-_________________
-
-**Điều nhóm làm chưa tốt:**
-
-_________________
-
----
-
-## 6. Nếu có thêm 1 ngày, nhóm sẽ làm gì? (50–100 từ)
-
-> 1–2 cải tiến cụ thể với lý do có bằng chứng từ scorecard.
-
-_________________
-
----
-
-*File này lưu tại: `reports/group_report.md`*  
-*Commit sau 18:00 được phép theo SCORING.md*
+*Ngày hoàn thành: 13/04/2026*

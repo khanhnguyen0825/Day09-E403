@@ -202,11 +202,19 @@ def _split_by_size(
         end = min(start + chunk_chars, len(text))
         chunk_text = text[start:end]
 
-        # TODO: Tìm ranh giới tự nhiên gần nhất (dấu xuống dòng, dấu chấm)
-        # thay vì cắt giữa câu
+        # Tìm ranh giới tự nhiên gần nhất (dấu xuống dòng, dấu chấm) để không cắt giữa câu
+        if end < len(text):
+            last_newline = chunk_text.rfind('\n')
+            last_period = chunk_text.rfind('. ')
+            if last_newline != -1 and last_newline > chunk_chars // 2:
+                end = start + last_newline + 1
+            elif last_period != -1 and last_period > chunk_chars // 2:
+                end = start + last_period + 2
+            
+            chunk_text = text[start:end]
 
         chunks.append({
-            "text": chunk_text,
+            "text": chunk_text.strip(),
             "metadata": {**base_metadata, "section": section},
         })
         # Overlap: lùi lại overlap_chars để chunk sau có ngữ cảnh từ chunk trước
@@ -222,29 +230,24 @@ def _split_by_size(
 
 def get_embedding(text: str) -> List[float]:
     """
-    Tạo embedding vector cho một đoạn text.
-
-    TODO Sprint 1:
-    Chọn một trong hai:
-
-    Option A — OpenAI Embeddings (cần OPENAI_API_KEY):
-        from openai import OpenAI
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        response = client.embeddings.create(
-            input=text,
-            model="text-embedding-3-small"
-        )
-        return response.data[0].embedding
-
-    Option B — Sentence Transformers (chạy local, không cần API key):
-        from sentence_transformers import SentenceTransformer
-        model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
-        return model.encode(text).tolist()
+    Tạo embedding vector cho một đoạn text sử dụng OpenAI.
+    Yêu cầu: OPENAI_API_KEY trong file .env
     """
-    raise NotImplementedError(
-        "TODO: Implement get_embedding().\n"
-        "Chọn Option A (OpenAI) hoặc Option B (Sentence Transformers) trong TODO comment."
+    from openai import OpenAI
+    api_key = os.getenv("OPENAI_API_KEY")
+    
+    if not api_key or not api_key.startswith("sk-"):
+        raise ValueError("Lỗi: Không tìm thấy OPENAI_API_KEY hợp lệ. Hãy kiểm tra file .env.")
+
+    client = OpenAI(api_key=api_key)
+    # Normalize text (OpenAI recommends replacing newlines with spaces)
+    text = text.replace("\n", " ")
+    
+    response = client.embeddings.create(
+        input=[text],
+        model="text-embedding-3-small"
     )
+    return response.data[0].embedding
 
 
 def build_index(docs_dir: Path = DOCS_DIR, db_dir: Path = CHROMA_DB_DIR) -> None:
@@ -274,9 +277,12 @@ def build_index(docs_dir: Path = DOCS_DIR, db_dir: Path = CHROMA_DB_DIR) -> None
     print(f"Đang build index từ: {docs_dir}")
     db_dir.mkdir(parents=True, exist_ok=True)
 
-    # TODO: Khởi tạo ChromaDB
-    # client = chromadb.PersistentClient(path=str(db_dir))
-    # collection = client.get_or_create_collection(...)
+    # Khởi tạo ChromaDB
+    client = chromadb.PersistentClient(path=str(db_dir))
+    collection = client.get_or_create_collection(
+        name="rag_lab",
+        metadata={"hnsw:space": "cosine"}
+    )
 
     total_chunks = 0
     doc_files = list(docs_dir.glob("*.txt"))
@@ -289,32 +295,29 @@ def build_index(docs_dir: Path = DOCS_DIR, db_dir: Path = CHROMA_DB_DIR) -> None
         print(f"  Processing: {filepath.name}")
         raw_text = filepath.read_text(encoding="utf-8")
 
-        # TODO: Gọi preprocess_document
-        # doc = preprocess_document(raw_text, str(filepath))
-
-        # TODO: Gọi chunk_document
-        # chunks = chunk_document(doc)
-
-        # TODO: Embed và lưu từng chunk vào ChromaDB
-        # for i, chunk in enumerate(chunks):
-        #     chunk_id = f"{filepath.stem}_{i}"
-        #     embedding = get_embedding(chunk["text"])
-        #     collection.upsert(
-        #         ids=[chunk_id],
-        #         embeddings=[embedding],
-        #         documents=[chunk["text"]],
-        #         metadatas=[chunk["metadata"]],
-        #     )
-        # total_chunks += len(chunks)
-
-        # Placeholder để code không lỗi khi chưa implement
-        doc = preprocess_document(raw_text, str(filepath))
+        # Tiền xử lý và cắt chunk (dùng tên file làm định danh thay vì toàn bộ path cho gọn)
+        doc = preprocess_document(raw_text, filepath.name)
         chunks = chunk_document(doc)
-        print(f"    → {len(chunks)} chunks (embedding chưa implement)")
-        total_chunks += len(chunks)
 
-    print(f"\nHoàn thành! Tổng số chunks: {total_chunks}")
-    print("Lưu ý: Embedding chưa được implement. Xem TODO trong get_embedding() và build_index().")
+        # Embed và lưu từng chunk vào ChromaDB
+        for i, chunk in enumerate(chunks):
+            chunk_id = f"{filepath.stem}_{i}"
+            embedding = get_embedding(chunk["text"])
+            
+            # Đảm bảo metadata không chứa Null/Empty để ChromaDB không báo lỗi
+            safe_metadata = {k: str(v) for k, v in chunk["metadata"].items() if v}
+
+            collection.upsert(
+                ids=[chunk_id],
+                embeddings=[embedding],
+                documents=[chunk["text"]],
+                metadatas=[safe_metadata],
+            )
+        
+        total_chunks += len(chunks)
+        print(f"    → Đã vector hóa và lưu {len(chunks)} chunks.")
+
+    print(f"\nHoàn thành! Tổng số chunks đã lưu vào Index: {total_chunks}")
 
 
 # =============================================================================
@@ -420,18 +423,11 @@ if __name__ == "__main__":
 
     # Bước 3: Build index (yêu cầu implement get_embedding)
     print("\n--- Build Full Index ---")
-    print("Lưu ý: Cần implement get_embedding() trước khi chạy bước này!")
-    # Uncomment dòng dưới sau khi implement get_embedding():
-    # build_index()
+    build_index()
 
     # Bước 4: Kiểm tra index
-    # Uncomment sau khi build_index() thành công:
-    # list_chunks()
-    # inspect_metadata_coverage()
+    print("\n--- Kiểm tra Index ---")
+    list_chunks()
+    inspect_metadata_coverage()
 
     print("\nSprint 1 setup hoàn thành!")
-    print("Việc cần làm:")
-    print("  1. Implement get_embedding() - chọn OpenAI hoặc Sentence Transformers")
-    print("  2. Implement phần TODO trong build_index()")
-    print("  3. Chạy build_index() và kiểm tra với list_chunks()")
-    print("  4. Nếu chunking chưa tốt: cải thiện _split_by_size() để split theo paragraph")
